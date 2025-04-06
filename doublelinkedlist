@@ -1,0 +1,245 @@
+#include <stdio.h>
+#include <stdlib.h>
+
+/* Định nghĩa cấu trúc Node */
+typedef struct Node {
+    Student data;
+    struct Node *pNextNode;
+    struct Node *pPrevNode;
+} Node;
+
+/* Định nghĩa cấu trúc danh sách liên kết đôi */
+typedef struct LinkedList {
+    Node *pHead;
+    Node *pTail;
+} LinkedList;
+
+/* Hàm tạo node mới */
+Node* createNode(Student data) {
+    Node *pNewNode = (Node*)malloc(sizeof(Node));
+    if (pNewNode != NULL) {
+        pNewNode->data = data;
+        pNewNode->pNextNode = NULL;
+        pNewNode->pPrevNode = NULL;
+    }
+    return pNewNode;
+}
+
+/* Hàm đếm số node trong danh sách */
+int countNodes(LinkedList *pList) {
+    int count = 0;
+    Node *pCurrent = pList->pHead;
+    while (pCurrent != NULL) {
+        count++;
+        pCurrent = pCurrent->pNextNode;
+    }
+    return count;
+}
+
+/* Hàm chèn node vào vị trí bất kỳ trong danh sách liên kết đôi */
+void insertSpecificPosition(LinkedList *pList, Student dataInsert, int pos) {
+    /* Tạo node mới */
+    Node *pNewNode = createNode(dataInsert);
+    if (pNewNode == NULL) {
+        printf("Lỗi cấp phát bộ nhớ!\n");
+        return;
+    }
+
+    /* Lấy số lượng node hiện có */
+    int count = countNodes(pList);
+
+    /* Chèn vào đầu danh sách */
+    if (pos <= 1 || pList->pHead == NULL) {
+        pNewNode->pNextNode = pList->pHead;
+        if (pList->pHead != NULL) {
+            pList->pHead->pPrevNode = pNewNode;
+        }
+        pList->pHead = pNewNode;
+        if (pList->pTail == NULL) { // Nếu danh sách rỗng, cập nhật pTail
+            pList->pTail = pNewNode;
+        }
+        return;
+    }
+
+    /* Chèn vào cuối danh sách */
+    if (pos > count) {
+        pNewNode->pPrevNode = pList->pTail;
+        if (pList->pTail != NULL) {
+            pList->pTail->pNextNode = pNewNode;
+        }
+        pList->pTail = pNewNode;
+        if (pList->pHead == NULL) { // Nếu danh sách rỗng, cập nhật pHead
+            pList->pHead = pNewNode;
+        }
+        return;
+    }
+
+    /* Chèn vào giữa danh sách */
+    Node *pCurrent = pList->pHead;
+    for (int i = 1; i < pos && pCurrent != NULL; i++) {
+        pCurrent = pCurrent->pNextNode;
+    }
+
+    /* Chèn trước pCurrent */
+    pNewNode->pNextNode = pCurrent;
+    pNewNode->pPrevNode = pCurrent->pPrevNode;
+    
+    if (pCurrent->pPrevNode != NULL) {
+        pCurrent->pPrevNode->pNextNode = pNewNode;
+    }
+    pCurrent->pPrevNode = pNewNode;
+
+    /* Nếu chèn ngay sau head, cập nhật pHead */
+    if (pCurrent == pList->pHead) {
+        pList->pHead = pNewNode;
+    }
+}
+void deleteAfterStudent(LinkedList *pList, const char *nameTarget)
+{
+    /* Bắt đầu từ đầu danh sách */
+    Node *pCurrent = pList->pHead;
+
+    while (pCurrent != NULL)
+    {
+        /* Tìm sinh viên cần xóa sau */
+        if (strcmp(pCurrent->dataStudent.nameStudent, nameTarget) == 0 && pCurrent->pNextNode != NULL)
+        {
+            /* Lưu node cần xóa */
+            Node *pDelete = pCurrent->pNextNode;
+
+            /* Cập nhật liên kết để bỏ qua node bị xóa */
+            pCurrent->pNextNode = pDelete->pNextNode;
+
+            /* Nếu node bị xóa không phải cuối danh sách, cập nhật pPrevNode */
+            if (pDelete->pNextNode != NULL)
+            {
+                pDelete->pNextNode->pPrevNode = pCurrent;
+            }
+            else
+            {
+                /* Nếu node bị xóa là cuối danh sách, cập nhật pTail */
+                pList->pTail = pCurrent;
+            }
+
+            /* Giải phóng bộ nhớ node bị xóa */
+            free(pDelete);
+            return; /* Thoát sau khi xóa */
+        }
+        pCurrent = pCurrent->pNextNode;
+    }
+}
+void deleteBeforeStudent(LinkedList *pList, const char *nameTarget)
+{
+    /* Kiểm tra danh sách rỗng hoặc có một phần tử */
+    if (pList->pHead == NULL || pList->pHead->pNextNode == NULL)
+    {
+        return; // Không thể xóa nếu danh sách rỗng hoặc chỉ có một phần tử
+    }
+
+    /* Bắt đầu từ phần tử thứ hai (vì không thể xóa trước phần tử đầu tiên) */
+    Node *pCurrent = pList->pHead->pNextNode;
+
+    while (pCurrent != NULL)
+    {
+        /* Tìm sinh viên cần xóa trước */
+        if (strcmp(pCurrent->dataStudent.nameStudent, nameTarget) == 0)
+        {
+            Node *pDelete = pCurrent->pPrevNode; // Node cần xóa
+
+            /* Nếu node cần xóa là head, cập nhật head */
+            if (pDelete == pList->pHead)
+            {
+                pList->pHead = pCurrent;
+                pCurrent->pPrevNode = NULL;
+            }
+            else
+            {
+                /* Liên kết node trước node bị xóa với node sau */
+                pDelete->pPrevNode->pNextNode = pCurrent;
+                pCurrent->pPrevNode = pDelete->pPrevNode;
+            }
+
+            /* Giải phóng bộ nhớ node bị xóa */
+            free(pDelete);
+            return; /* Thoát sau khi xóa */
+        }
+
+        pCurrent = pCurrent->pNextNode;
+    }
+}
+void deleteLast(LinkedList *pList)
+{
+    /* Kiểm tra danh sách rỗng */
+    if (pList->pHead == NULL)
+    {
+        return;
+    }
+
+    /* Nếu danh sách chỉ có một phần tử */
+    if (pList->pHead == pList->pTail)
+    {
+        free(pList->pHead);
+        pList->pHead = NULL;
+        pList->pTail = NULL;
+        return;
+    }
+
+    /* Cập nhật con trỏ của phần tử trước phần tử cuối */
+    Node *pDelete = pList->pTail;
+    pList->pTail = pList->pTail->pPrevNode;
+    pList->pTail->pNextNode = NULL; // Ngắt liên kết
+
+    /* Giải phóng bộ nhớ của phần tử bị xóa */
+    free(pDelete);
+}
+void deleteSpecificPosition(LinkedList *pList, int pos)
+{
+    /* Kiểm tra danh sách rỗng */
+    if (pList->pHead == NULL)
+    {
+        return;
+    }
+
+    Node *pCurrent = pList->pHead;
+
+    /* Duyệt đến nút cần xóa */
+    for (int i = 0; pCurrent != NULL && i < pos; i++)
+    {
+        pCurrent = pCurrent->pNextNode;
+    }
+
+    /* Kiểm tra vị trí hợp lệ */
+    if (pCurrent == NULL)
+    {
+        return;
+    }
+
+    /* Nếu xóa phần tử đầu tiên */
+    if (pCurrent == pList->pHead)
+    {
+        pList->pHead = pCurrent->pNextNode;
+        if (pList->pHead != NULL) // Nếu danh sách chưa rỗng hoàn toàn
+        {
+            pList->pHead->pPrevNode = NULL;
+        }
+        else
+        {
+            pList->pTail = NULL; // Nếu danh sách chỉ còn 1 phần tử, cập nhật tail
+        }
+    }
+    /* Nếu xóa phần tử cuối cùng */
+    else if (pCurrent == pList->pTail)
+    {
+        pList->pTail = pCurrent->pPrevNode;
+        pList->pTail->pNextNode = NULL;
+    }
+    /* Nếu xóa phần tử ở giữa */
+    else
+    {
+        pCurrent->pPrevNode->pNextNode = pCurrent->pNextNode;
+        pCurrent->pNextNode->pPrevNode = pCurrent->pPrevNode;
+    }
+
+    /* Giải phóng bộ nhớ */
+    free(pCurrent);
+}
